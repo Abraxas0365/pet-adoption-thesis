@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 
-app = FastAPI()
+from app.routes.test import router as test_router
 
+app = FastAPI()
 
 @app.get("/health")
 def health():
@@ -9,3 +10,5 @@ def health():
         "status": "ok",
         "service": "microservice",
     }
+    
+app.include_router(test_router)

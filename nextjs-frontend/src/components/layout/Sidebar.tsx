@@ -28,7 +28,7 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: Home, active: true },
+  { label: "Dashboard", href: "/", icon: Home, active: true },
   { label: "Browse Pets", href: "/pets", icon: PawPrint },
   { label: "Favorites", href: "/favorites", icon: Heart, badge: "12" },
   { label: "Appointments", href: "/appointments", icon: CalendarDays },
@@ -36,6 +36,7 @@ const navItems: NavItem[] = [
   { label: "Profile", href: "/profile", icon: UserRound },
   { label: "Settings", href: "/settings", icon: Settings },
   { label: "Dark Mode", href: "/dark-mode", icon: Moon },
+  { label: "Test Page", href: "/testpage", icon: Search },
 ];
 
 export default function Sidebar() {
@@ -66,7 +67,7 @@ export default function Sidebar() {
         isOpen ? "w-72" : "w-20"
       )}
     >
-      <div className="flex h-full flex-col">
+      <div className="flex h-screen flex-col">
         <div className="flex items-center justify-between border-b border-sidebar-border px-4 py-4">
           <div className={cn("flex items-center gap-3", !isOpen && "justify-center")}>
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/20">
@@ -110,8 +111,8 @@ export default function Sidebar() {
             {isOpen && <span className="text-sm">Search</span>}
           </div>
         </div>
-
-        <ScrollArea className="flex-1 px-3">
+        {/* Sidebar Contents */}
+        <ScrollArea className="flex-1 px-3 overflow-auto">
           <nav className="space-y-1.5">
             {navItems.map(({ label, href, icon: Icon, active, badge }) => (
               <a

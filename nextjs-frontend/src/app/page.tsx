@@ -1,7 +1,7 @@
 "use client";
 
-import Landing from "@/pages/landing";
-import Loading from "@/pages/loading";
+import Landing from "@/views/landing";
+import Loading from "@/views/loading";
 import { useHealth } from "@/hooks/useHealth";
 
 export default function Home() {
