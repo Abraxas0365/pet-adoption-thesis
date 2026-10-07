@@ -22,7 +22,7 @@ class HealthController extends Controller
 
         // Check FastAPI microservice
         try {
-            $response = Http::get('http://localhost:8001/health');
+            $response = Http::get('http://localhost:8001/matching/health');
 
             $microservice = $response->successful();
         } catch (\Throwable $e) {

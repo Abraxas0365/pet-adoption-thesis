@@ -16,5 +16,7 @@ export async function checkHealth(): Promise<HealthStatus> {
     );
   }
 
+  // console.log("Health check response:", response);
+
   return response.json();
 }
