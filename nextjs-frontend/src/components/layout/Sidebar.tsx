@@ -30,9 +30,9 @@ type NavItem = {
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/", icon: Home, active: true },
   { label: "Browse Pets", href: "/pets", icon: PawPrint },
-  { label: "Favorites", href: "/favorites", icon: Heart, badge: "12" },
-  { label: "Appointments", href: "/appointments", icon: CalendarDays },
-  { label: "Messages", href: "/messages", icon: Bell, badge: "" },
+  // { label: "Favorites", href: "/favorites", icon: Heart, badge: "12" },
+  // { label: "Appointments", href: "/appointments", icon: CalendarDays },
+  { label: "Messages", href: "/messages", icon: Bell, badge: "67" },
   { label: "Profile", href: "/profile", icon: UserRound },
   { label: "Settings", href: "/settings", icon: Settings },
   { label: "Dark Mode", href: "/dark-mode", icon: Moon },
