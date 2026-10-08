@@ -56,19 +56,20 @@ COLORS = [
 
 BREEDS = [
     'aspin',
+    'puspin',
 ]
 
 FEATURE_WEIGHTS = {
     "species": 5.0,
     "sex": 2.0,
-    "size": 4.0,
+    "size": 3.0,
     "color": 1.0,
-    "temperament": 5.0,
-    "activity_level": 4.0,
+    "temperament": 4.0,
+    "activity_level": 3.0,
 }
 
 SCORE_WEIGHTS = {
-    "cosine": 0.8,
+    "algorithm": 0.8,
     "age": 0.1,
     "weight": 0.1
 }

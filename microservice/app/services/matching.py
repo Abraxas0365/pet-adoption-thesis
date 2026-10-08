@@ -6,6 +6,7 @@ from app.features.pet import pet_to_vector
 
 from app.algorithms.cosine import weighted_cosine_similarity
 from app.algorithms.range import range_score
+from app.algorithms.jaccard import jaccard_similarity
 
 from app.features.dictionaries import (
     SCORE_WEIGHTS,
@@ -35,6 +36,11 @@ def calculate_match_score(
         VECTOR_WEIGHTS,
     )
 
+    jaccard_score = jaccard_similarity(
+        adopter_vector,
+        pet_vector,
+    )
+
     # --------------------------------
     # 3. Calculate range compatibility
     # --------------------------------
@@ -55,10 +61,20 @@ def calculate_match_score(
     # 4. Calculate final match score
     # --------------------------------
 
-    final_score = (
-        cosine_score * SCORE_WEIGHTS["cosine"]
+    cosine_final_score = (
+        cosine_score * SCORE_WEIGHTS["algorithm"]
         + age_score * SCORE_WEIGHTS["age"]
         + weight_score * SCORE_WEIGHTS["weight"]
     )
 
+    jaccard_final_score = (
+        jaccard_score * SCORE_WEIGHTS["algorithm"]
+        + age_score * SCORE_WEIGHTS["age"]
+        + weight_score * SCORE_WEIGHTS["weight"]
+    )
+
+    final_score = {
+        "Weighted Cosine": cosine_final_score,
+        "Jaccard": jaccard_final_score,
+    }
     return final_score
