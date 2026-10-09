@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 
 export default function Landing() {
   return (
-    <main className="overflow-x-hidden min-h-screen min-w-full max-w-screen">
+    <main className="flex-1 overflow-x-hidden min-h-screen min-w-0 max-w-screen">
       {/* Background image */}
       <div
         className="flex-row flex min-h-screen min-w-full max-w-screen gap-6 overflow-hidden opacity-70 bg-cover bg-center"

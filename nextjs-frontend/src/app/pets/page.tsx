@@ -3,7 +3,7 @@ import BrowsePets from "@/views/browse";
 
 export default function BrowsePetsPage() {
   return (
-    <div className="flex">
+    <div className="flex max-w-full">
       <Sidebar />
       <BrowsePets />
     </div>

@@ -64,11 +64,11 @@ export default function Sidebar() {
   return (
     <aside
       className={cn(
-        "border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all duration-200",
+        "border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all duration-200 z-10",
         isOpen ? "w-72" : "w-20"
       )}
     >
-      <div className="flex h-screen flex-col">
+      <div className="flex h-screen flex-col z-10">
         <div className="flex items-center justify-between border-b border-sidebar-border px-4 py-4">
           <div className={cn("flex items-center gap-3", !isOpen && "justify-center")}>
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/20">
