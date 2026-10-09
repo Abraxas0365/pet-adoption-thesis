@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   Bell,
   CalendarDays,
@@ -23,12 +24,11 @@ type NavItem = {
   label: string;
   href: string;
   icon: LucideIcon;
-  active?: boolean;
   badge?: string;
 };
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/", icon: Home, active: true },
+  { label: "Dashboard", href: "/", icon: Home },
   { label: "Browse Pets", href: "/pets", icon: PawPrint },
   // { label: "Favorites", href: "/favorites", icon: Heart, badge: "12" },
   // { label: "Appointments", href: "/appointments", icon: CalendarDays },
@@ -36,10 +36,11 @@ const navItems: NavItem[] = [
   // { label: "Profile", href: "/profile", icon: UserRound },
   { label: "Settings", href: "/settings", icon: Settings },
   { label: "Dark Mode", href: "/dark-mode", icon: Moon },
-  { label: "Test Page", href: "/testpage", icon: Search },
+  // { label: "Test Page", href: "/testpage", icon: Search },
 ];
 
 export default function Sidebar() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -79,7 +80,9 @@ export default function Sidebar() {
                 <p className="text-sm font-semibold tracking-wide text-sidebar-foreground">
                   PawMatch
                 </p>
-                <p className="text-xs text-muted-foreground">Adoption Hub</p>
+                <p className="text-xs text-muted-foreground">
+                  Adoption Hub
+                </p>
               </div>
             )}
           </div>
@@ -108,62 +111,72 @@ export default function Sidebar() {
             )}
           >
             <Search className="h-4 w-4" />
-            {isOpen && <span className="text-sm">Search</span>}
+            {isOpen && <span className="text-sm">
+              Search
+            </span>}
           </div>
         </div>
         {/* Sidebar Contents */}
         <ScrollArea className="flex-1 px-3 overflow-auto">
           <nav className="space-y-1.5">
-            {navItems.map(({ label, href, icon: Icon, active, badge }) => (
-              <a
-                key={label}
-                href={href}
-                onClick={
-                  label === "Dark Mode"
-                    ? (event) => {
-                        event.preventDefault();
-                        toggleDarkMode();
-                      }
-                    : undefined
-                }
-                aria-pressed={label === "Dark Mode" ? isDarkMode : undefined}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground",
-                  !isOpen ? "justify-center px-2" : "justify-start"
-                )}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                {isOpen && (
-                  <>
-                    <span className="flex-1">{label}</span>
-                    {label === "Dark Mode" && (
-                      <span
-                        aria-hidden="true"
-                        className={cn(
-                          "relative h-5 w-9 shrink-0 rounded-full transition-colors",
-                          isDarkMode ? "bg-primary" : "bg-muted-foreground/30"
-                        )}
-                      >
+            {navItems.map(({ label, href, icon: Icon, badge }) => {
+              const active =
+                href === "/"
+                  ? pathname === href
+                  : pathname === href || pathname.startsWith(`${href}/`);
+
+              return (
+                <a
+                  key={label}
+                  href={href}
+                  onClick={
+                    label === "Dark Mode"
+                      ? (event) => {
+                          event.preventDefault();
+                          toggleDarkMode();
+                        }
+                      : undefined
+                  }
+                  aria-current={active ? "page" : undefined}
+                  aria-pressed={label === "Dark Mode" ? isDarkMode : undefined}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
+                    active
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                    !isOpen ? "justify-center px-2" : "justify-start"
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {isOpen && (
+                    <>
+                      <span className="flex-1">{label}</span>
+                      {label === "Dark Mode" && (
                         <span
+                          aria-hidden="true"
                           className={cn(
-                            "absolute top-0.5 h-4 w-4 rounded-full bg-background shadow transition-transform",
-                            isDarkMode ? "translate-x-4" : "translate-x-0.5"
+                            "relative h-5 w-9 shrink-0 rounded-full transition-colors",
+                            isDarkMode ? "bg-primary" : "bg-muted-foreground/30"
                           )}
-                        />
-                      </span>
-                    )}
-                    {badge && (
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                        {badge}
-                      </span>
-                    )}
-                  </>
-                )}
-              </a>
-            ))}
+                        >
+                          <span
+                            className={cn(
+                              "absolute top-0.5 h-4 w-4 rounded-full bg-background shadow transition-transform",
+                              isDarkMode ? "translate-x-4" : "translate-x-0.5"
+                            )}
+                          />
+                        </span>
+                      )}
+                      {badge && (
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                          {badge}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </a>
+              );
+            })}
           </nav>
         </ScrollArea>
 

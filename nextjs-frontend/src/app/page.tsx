@@ -3,6 +3,7 @@
 import Landing from "@/views/landing";
 import Loading from "@/views/loading";
 import { useHealth } from "@/hooks/useHealth";
+import Sidebar from "@/components/layout/Sidebar";
 
 export default function Home() {
   const { loading } = useHealth();
@@ -11,5 +12,10 @@ export default function Home() {
     return <Loading />;
   }
 
-  return <Landing />;
+  return (
+    <div className="flex">
+      <Sidebar />
+      <Landing />
+    </div>
+  );
 }

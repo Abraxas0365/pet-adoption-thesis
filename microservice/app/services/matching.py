@@ -7,6 +7,7 @@ from app.features.pet import pet_to_vector
 from app.algorithms.cosine import weighted_cosine_similarity
 from app.algorithms.range import range_score
 from app.algorithms.jaccard import jaccard_similarity
+from app.algorithms.tversky import tversky_similarity
 
 from app.features.dictionaries import (
     SCORE_WEIGHTS,
@@ -41,6 +42,10 @@ def calculate_match_score(
         pet_vector,
     )
 
+    tversky_score = tversky_similarity(
+        adopter_vector,
+        pet_vector,
+    )
     # --------------------------------
     # 3. Calculate range compatibility
     # --------------------------------
@@ -73,8 +78,15 @@ def calculate_match_score(
         + weight_score * SCORE_WEIGHTS["weight"]
     )
 
+    tversky_final_score = (
+        tversky_score * SCORE_WEIGHTS["algorithm"]
+        + age_score * SCORE_WEIGHTS["age"]
+        + weight_score * SCORE_WEIGHTS["weight"]
+    )
+
     final_score = {
         "Weighted Cosine": cosine_final_score,
         "Jaccard": jaccard_final_score,
+        "Tversky": tversky_final_score,
     }
     return final_score

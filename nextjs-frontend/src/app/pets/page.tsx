@@ -1,11 +1,11 @@
 import Sidebar from "@/components/layout/Sidebar";
-import PythonTest from "@/views/test";
+import BrowsePets from "@/views/browse";
 
-export default function TestPage() {
+export default function BrowsePetsPage() {
   return (
     <div className="flex">
       <Sidebar />
-      <PythonTest />
+      <BrowsePets />
     </div>
   );
 }

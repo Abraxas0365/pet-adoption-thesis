@@ -21,7 +21,6 @@ export default function PythonTest() {
 
   return (
     <main className="flex  min-h-screen w-full overflow-x-hidden">
-      <Sidebar />
       <div>
         <h1 className="text-2xl font-bold">Python Test</h1>
 

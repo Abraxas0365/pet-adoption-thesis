@@ -1,5 +1,3 @@
-import math
-
 def jaccard_similarity(
     a: list[float],
     b: list[float],
