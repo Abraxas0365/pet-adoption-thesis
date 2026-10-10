@@ -26,7 +26,7 @@ class PetController extends Controller
             );
         }
 
-        $pets = $query->paginate(24);
+        $pets = $query->paginate($request->integer('per_page', 24));
 
         return response()->json($pets);
     }

@@ -80,10 +80,12 @@ export default function PetCard({ pet }: PetCardProps) {
                              duration-300 group-hover:scale-105"
                 />
               ) : (
-                <div className="flex h-full items-center justify-center
-                                text-sm text-muted-foreground">
-                  No photo available
-                </div>
+                <img
+                  src={`/images/pets-default/${pet.species.toLowerCase()}.jpg`}
+                  alt={pet.name}
+                  className="h-full w-full object-cover transition-transform
+                             duration-300 group-hover:scale-105"
+                />
               )}
 
               <Badge className="absolute right-3 top-3">
@@ -158,10 +160,11 @@ export default function PetCard({ pet }: PetCardProps) {
             className="aspect-video w-full rounded-lg object-cover"
           />
         ) : (
-          <div className="flex aspect-video items-center justify-center
-                          rounded-lg bg-muted text-sm text-muted-foreground">
-            No photo available
-          </div>
+          <img
+                  src={`/images/pets-default/${pet.species.toLowerCase()}.jpg`}
+                  alt={pet.name}
+                  className="aspect-video w-full rounded-lg object-cover"
+                />
         )}
 
         <div className="grid grid-cols-2 gap-4">

@@ -25,10 +25,24 @@ type ApiPet = {
 
 type PetApiResponse = {
   data: ApiPet[];
+  current_page: number;
+  last_page: number;
+  total: number;
 };
 
-export async function fetchPets(signal?: AbortSignal): Promise<Pet[]> {
-  const response = await fetch(`${API_URL}/api/pets?test_only=1`, { signal });
+export type PetPage = {
+  pets: Pet[];
+  currentPage: number;
+  lastPage: number;
+  total: number;
+};
+
+export async function fetchPets(
+  pagenum: number,
+  petsPerPage: number,
+  signal?: AbortSignal,
+): Promise<PetPage> {
+  const response = await fetch(`${API_URL}/api/pets?page=${pagenum}&per_page=${petsPerPage}`, { signal });
 
   if (!response.ok) {
     throw new Error(`Unable to load pets: API request failed (${response.status})`);
@@ -36,25 +50,30 @@ export async function fetchPets(signal?: AbortSignal): Promise<Pet[]> {
 
   const result: PetApiResponse = await response.json();
 
-  return result.data.map((pet) => ({
-    id: pet.id,
-    external_pet_id: pet.external_pet_id,
-    name: pet.name,
-    species: pet.pet_type,
-    breed: pet.breed,
-    ageMonths: pet.age_months,
-    sex: pet.sex,
-    weight: pet.weight_kg === null ? null : Number(pet.weight_kg),
-    color: pet.color,
-    size: pet.size,
-    temperament: pet.temperament ?? [],
-    activity_level: pet.activity_level,
-    medical_condition: pet.has_medical_condition
-      ? "Medical condition"
-      : "Healthy",
-    vaccination_status: pet.vaccinated ? "Vaccinated" : "Not vaccinated",
-    image_url: pet.image_url,
-    status: pet.status,
-    is_test_data: pet.is_test_data,
-  }));
+  return {
+    pets: result.data.map((pet) => ({
+      id: pet.id,
+      external_pet_id: pet.external_pet_id,
+      name: pet.name,
+      species: pet.pet_type,
+      breed: pet.breed,
+      ageMonths: pet.age_months,
+      sex: pet.sex,
+      weight: pet.weight_kg === null ? null : Number(pet.weight_kg),
+      color: pet.color,
+      size: pet.size,
+      temperament: pet.temperament ?? [],
+      activity_level: pet.activity_level,
+      medical_condition: pet.has_medical_condition
+        ? "Medical condition"
+        : "Healthy",
+      vaccination_status: pet.vaccinated ? "Vaccinated" : "Not vaccinated",
+      image_url: pet.image_url,
+      status: pet.status,
+      is_test_data: pet.is_test_data,
+    })),
+    currentPage: result.current_page,
+    lastPage: result.last_page,
+    total: result.total,
+  };
 }

@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { fetchPets } from "@/services/pets";
 import type { Pet } from "@/types/pets";
 
-export default function usePets() {
+export default function usePets(pagenum: number, petsPerPage: number) {
   const [pets, setPets] = useState<Pet[]>([]);
+  const [lastPage, setLastPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,9 +19,11 @@ export default function usePets() {
       setError(null);
 
       try {
-        const result = await fetchPets(controller.signal);
+        const result = await fetchPets(pagenum, petsPerPage, controller.signal);
         if (!controller.signal.aborted) {
-          setPets(result);
+          setPets(result.pets);
+          setLastPage(result.lastPage);
+          setTotal(result.total);
         }
       } catch (err) {
         if (controller.signal.aborted) {
@@ -38,7 +42,7 @@ export default function usePets() {
 
     void loadPets();
     return () => controller.abort();
-  }, []);
+  }, [pagenum, petsPerPage]);
 
-  return { pets, loading, error };
+  return { pets, lastPage, total, loading, error };
 }

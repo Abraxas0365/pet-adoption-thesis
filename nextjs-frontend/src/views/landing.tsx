@@ -27,7 +27,9 @@ export default function Landing() {
 
             <div className="flex gap-4">
               <Button>Find Your Match</Button>
-              <Button variant="outline">Browse Pets</Button>
+              <Button variant="outline" onClick={() => window.location.href = "/pets"}>
+                Browse Pets
+              </Button>
             </div>
           </section>
         </div>
