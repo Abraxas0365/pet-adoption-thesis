@@ -400,9 +400,44 @@ Responsible for:
 
 PawMatch uses a similarity-based matchmaking approach to recommend pets to potential adopters.
 
-The matching service processes relevant adopter and pet attributes, represents them as numerical vectors, and calculates their similarity using **cosine similarity**.
+Laravel retrieves pets whose status is `available` and sends the full eligible set to FastAPI in one batch. Ordinary preferences do not filter candidates. The batch endpoint calculates weighted cosine, Jaccard, and Tversky similarities, then ranks by the requested algorithm. The current page does not offer algorithm selection, so Laravel explicitly defaults to `weighted_cosine`.
 
-The resulting similarity scores are used by the application to generate personalized pet recommendations.
+Feature vectors follow the shared feature-dictionary order: species, sex, size, color, temperament, and activity level. The supported species categories include dog, cat, bird, and rabbit from the existing dataset. Empty adopter preferences and unknown pet values are omitted from feature comparisons; when no comparable preferences exist, each algorithm returns a neutral `1.0`. Missing age or weight stays `null` and is neutral in the existing range component. Age is measured in months and weight in kilograms. The established score formula remains `0.8 * algorithm similarity + 0.1 * age score + 0.1 * weight score`.
+
+Scores are normalized to the `0`–`1` range. The frontend displays the selected final score as a percentage. Test and official pet records continue to share the existing available-pet workflow; no `is_test_data` restriction is applied by the current matching endpoint.
+
+### Matching API contracts
+
+The frontend calls `POST /api/matching`:
+
+```json
+{
+  "adopter": {
+    "preferred_species": ["dog"],
+    "preferred_sex": ["female"],
+    "preferred_size": [],
+    "preferred_color": [],
+    "preferred_temperament": [],
+    "preferred_activity_level": [],
+    "preferred_age_min": null,
+    "preferred_age_max": null,
+    "preferred_weight_min": null,
+    "preferred_weight_max": null,
+    "preferred_breed": [],
+    "home_type": "house",
+    "has_other_animals": false,
+    "other_animals": [],
+    "can_handle_medical_conditions": false,
+    "can_handle_special_care": false
+  }
+}
+```
+
+Laravel sends `POST /matching/batch` to the private FastAPI service with that adopter object, an `algorithm` identifier (`weighted_cosine`, `jaccard`, or `tversky`), and `pets` containing database pet IDs and matching attributes. Nullable database attributes remain `null`. The internal service base URL is configured in Laravel as `MATCHING_SERVICE_URL` (default `http://127.0.0.1:8001`).
+
+Laravel responds with `status`, `message`, `algorithm`, `score_scale` (`0_to_1`), `total`, and `results`. Each result contains `pet_id`, pet display fields, the selected final `score`, raw algorithm `scores`, and combined `final_scores`.
+
+Breed and care capability fields are preserved in the request but are not features in the existing similarity vectors; they do not filter candidates or affect scores. Adding them to the algorithm requires an agreed feature definition and weights.
 
 ---
 

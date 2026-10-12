@@ -1,92 +1,142 @@
+import math
+from typing import Literal
+
+from app.algorithms.cosine import weighted_cosine_similarity
+from app.algorithms.jaccard import jaccard_similarity
+from app.algorithms.range import range_score
+from app.algorithms.tversky import tversky_similarity
+from app.features.adopter import adopter_to_vector
+from app.features.dictionaries import (
+    ACTIVITY_LEVEL,
+    COLORS,
+    SCORE_WEIGHTS,
+    SEX,
+    SIZE,
+    SPECIES,
+    TEMPERAMENTS,
+    VECTOR_WEIGHTS,
+)
+from app.features.pet import pet_to_vector
 from app.schemas.adopter import AdopterSchema
 from app.schemas.pet import PetSchema
 
-from app.features.adopter import adopter_to_vector
-from app.features.pet import pet_to_vector
+Algorithm = Literal["weighted_cosine", "jaccard", "tversky"]
 
-from app.algorithms.cosine import weighted_cosine_similarity
-from app.algorithms.range import range_score
-from app.algorithms.jaccard import jaccard_similarity
-from app.algorithms.tversky import tversky_similarity
-
-from app.features.dictionaries import (
-    SCORE_WEIGHTS,
-    VECTOR_WEIGHTS,
+FEATURE_GROUPS = (
+    ("preferred_species", "species", SPECIES, False),
+    ("preferred_sex", "sex", SEX, False),
+    ("preferred_size", "size", SIZE, False),
+    ("preferred_color", "color", COLORS, False),
+    ("preferred_temperament", "temperament", TEMPERAMENTS, True),
+    ("preferred_activity_level", "activity_level", ACTIVITY_LEVEL, False),
 )
 
 
-def calculate_match_score(
+def calculate_match_scores(
     adopter: AdopterSchema,
     pet: PetSchema,
-) -> float:
-
-    # --------------------------------
-    # 1. Convert data into vectors
-    # --------------------------------
-
+) -> dict[str, float]:
     adopter_vector = adopter_to_vector(adopter)
     pet_vector = pet_to_vector(pet)
+    comparable_indices: list[int] = []
+    offset = 0
 
-    # --------------------------------
-    # 2. Calculate cosine similarity
-    # --------------------------------
+    for preference_field, pet_field, categories, is_multi in FEATURE_GROUPS:
+        width = len(categories)
+        requested_values = getattr(adopter, preference_field)
+        requested_categories = {
+            value.strip().lower()
+            for value in requested_values
+            if value.strip().lower() in categories
+        }
+        pet_value = getattr(pet, pet_field)
 
-    cosine_score = weighted_cosine_similarity(
-        adopter_vector,
-        pet_vector,
-        VECTOR_WEIGHTS,
-    )
+        if is_multi:
+            pet_is_known = pet_value is not None and (
+                not pet_value
+                or any(value.strip().lower() in categories for value in pet_value)
+            )
+        else:
+            pet_is_known = (
+                isinstance(pet_value, str)
+                and pet_value.strip().lower() in categories
+            )
 
-    jaccard_score = jaccard_similarity(
-        adopter_vector,
-        pet_vector,
-    )
+        if requested_categories and pet_is_known:
+            comparable_indices.extend(range(offset, offset + width))
 
-    tversky_score = tversky_similarity(
-        adopter_vector,
-        pet_vector,
-    )
-    # --------------------------------
-    # 3. Calculate range compatibility
-    # --------------------------------
+        offset += width
 
+    if comparable_indices:
+        adopter_vector = [adopter_vector[index] for index in comparable_indices]
+        pet_vector = [pet_vector[index] for index in comparable_indices]
+        weights = [VECTOR_WEIGHTS[index] for index in comparable_indices]
+        scores = {
+            "weighted_cosine": weighted_cosine_similarity(
+                adopter_vector,
+                pet_vector,
+                weights,
+            ),
+            "jaccard": jaccard_similarity(adopter_vector, pet_vector),
+            "tversky": tversky_similarity(adopter_vector, pet_vector),
+        }
+    else:
+        # No shared, specified feature is not evidence of incompatibility.
+        scores = {
+            "weighted_cosine": 1.0,
+            "jaccard": 1.0,
+            "tversky": 1.0,
+        }
+
+    for key, value in scores.items():
+        if not math.isfinite(value) or value < -1e-12 or value > 1.0 + 1e-12:
+            raise ValueError(f"{key} produced an invalid similarity score.")
+
+    return {
+        key: min(1.0, max(0.0, value))
+        for key, value in scores.items()
+    }
+
+
+def calculate_final_scores(
+    adopter: AdopterSchema,
+    pet: PetSchema,
+    scores: dict[str, float],
+) -> dict[str, float]:
     age_score = range_score(
         pet.age,
         adopter.preferred_age_min,
         adopter.preferred_age_max,
     )
-
     weight_score = range_score(
         pet.weight,
         adopter.preferred_weight_min,
         adopter.preferred_weight_max,
     )
 
-    # --------------------------------
-    # 4. Calculate final match score
-    # --------------------------------
-
-    cosine_final_score = (
-        cosine_score * SCORE_WEIGHTS["algorithm"]
-        + age_score * SCORE_WEIGHTS["age"]
-        + weight_score * SCORE_WEIGHTS["weight"]
-    )
-
-    jaccard_final_score = (
-        jaccard_score * SCORE_WEIGHTS["algorithm"]
-        + age_score * SCORE_WEIGHTS["age"]
-        + weight_score * SCORE_WEIGHTS["weight"]
-    )
-
-    tversky_final_score = (
-        tversky_score * SCORE_WEIGHTS["algorithm"]
-        + age_score * SCORE_WEIGHTS["age"]
-        + weight_score * SCORE_WEIGHTS["weight"]
-    )
-
-    final_score = {
-        "Weighted Cosine": cosine_final_score,
-        "Jaccard": jaccard_final_score,
-        "Tversky": tversky_final_score,
+    return {
+        algorithm: (
+            score * SCORE_WEIGHTS["algorithm"]
+            + age_score * SCORE_WEIGHTS["age"]
+            + weight_score * SCORE_WEIGHTS["weight"]
+        )
+        for algorithm, score in scores.items()
     }
-    return final_score
+
+
+def calculate_match_score(
+    adopter: AdopterSchema,
+    pet: PetSchema,
+) -> dict[str, float]:
+    scores = calculate_match_scores(adopter, pet)
+    return calculate_final_scores(adopter, pet, scores)
+
+
+def selected_match_score(
+    algorithm: Algorithm,
+    final_scores: dict[str, float],
+) -> float:
+    score = final_scores[algorithm]
+    if not math.isfinite(score) or not 0.0 <= score <= 1.0:
+        raise ValueError("The selected algorithm produced an invalid final score.")
+    return score

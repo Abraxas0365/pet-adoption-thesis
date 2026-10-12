@@ -1,5 +1,5 @@
 def range_score(
-    value: float,
+    value: float | None,
     minimum: float | None,
     maximum: float | None,
 ) -> float:
@@ -10,10 +10,11 @@ def range_score(
         1.0 if there is no preference
         1.0 if the value is within the preferred range
         0.0 if the value is outside the preferred range
+        1.0 if the pet value is unknown (neutral, not a mismatch)
     """
 
     # No preference
-    if minimum is None and maximum is None:
+    if value is None or (minimum is None and maximum is None):
         return 1.0
 
     # Below minimum

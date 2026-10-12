@@ -1,11 +1,14 @@
-def one_hot(value: str, categories: list[str]) -> list[int]:
+def one_hot(value: str | None, categories: list[str]) -> list[int]:
     """
     Example:
     dog -> [1,0]
     cat -> [0,1]
     """
 
-    value = value.lower()
+    if value is None or not value.strip():
+        return [0 for _ in categories]
+
+    value = value.strip().lower()
 
     return [
         1 if value == category else 0
@@ -18,8 +21,10 @@ def multi_hot(values: list[str], categories: list[str]) -> list[int]:
     Example:
     ["dog","cat"] -> [1,1]
     """
+    if values is None:
+        return [0 for _ in categories]
 
-    values = [v.lower() for v in values]
+    values = [v.strip().lower() for v in values]
 
     return [
         1 if category in values else 0

@@ -1,6 +1,8 @@
 SPECIES = [
     "dog",
     "cat",
+    "bird",
+    "rabbit",
 ]
 
 SEX = [
@@ -30,6 +32,7 @@ TEMPERAMENTS = [
     "friendly",
     "playful",
     "calm",
+    "affectionate",
     "energetic",
     "independent",
     "protective",

@@ -1,6 +1,6 @@
 
 export const MATCH_OPTIONS = {
-  species: ["dog", "cat"],
+  species: ["dog", "cat", "bird", "rabbit"],
   sex: ["male", "female"],
   size: ["small", "medium", "large"],
   color: ["black", "white", "brown", "gray", "orange", "cream"],

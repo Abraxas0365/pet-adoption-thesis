@@ -65,11 +65,13 @@ export function MatchPreferencesForm({
 }: MatchPreferencesFormProps) {
   const [values, setValues] =
     useState<MatchPreferences>({ ...initialValues });
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   function update<K extends keyof MatchPreferences>(
     key: K,
     value: MatchPreferences[K],
   ) {
+    setValidationError(null);
     setValues((current) => ({
       ...current,
       [key]: value,
@@ -84,6 +86,7 @@ export function MatchPreferencesForm({
       values.preferred_age_max !== null &&
       values.preferred_age_min > values.preferred_age_max
     ) {
+      setValidationError("Maximum age must be greater than or equal to minimum age.");
       return;
     }
 
@@ -92,13 +95,16 @@ export function MatchPreferencesForm({
       values.preferred_weight_max !== null &&
       values.preferred_weight_min > values.preferred_weight_max
     ) {
+      setValidationError("Maximum weight must be greater than or equal to minimum weight.");
       return;
     }
 
+    setValidationError(null);
     void onSubmit({ ...values });
   }
 
   function resetForm() {
+    setValidationError(null);
     setValues({ ...initialValues });
   }
 
@@ -365,6 +371,12 @@ export function MatchPreferencesForm({
           </Field>
         </FieldSet>
       </div>
+
+      {validationError ? (
+        <p role="alert" className="text-sm text-destructive">
+          {validationError}
+        </p>
+      ) : null}
 
       <div className="flex flex-wrap gap-3">
         <Button type="submit" disabled={isSubmitting}>
