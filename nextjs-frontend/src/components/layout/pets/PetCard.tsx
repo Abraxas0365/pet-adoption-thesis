@@ -152,7 +152,6 @@ export default function PetCard({ pet }: PetCardProps) {
             {pet.breed} · {pet.species} · {pet.sex}
           </DialogDescription>
         </DialogHeader>
-
         {imageUrl ? (
           <img
             src={imageUrl}

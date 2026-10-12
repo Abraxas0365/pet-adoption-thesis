@@ -31,12 +31,8 @@ const navItems: NavItem[] = [
   { label: "Dashboard", href: "/", icon: Home },
   { label: "Browse Pets", href: "/pets", icon: PawPrint },
   // { label: "Favorites", href: "/favorites", icon: Heart, badge: "12" },
-  // { label: "Appointments", href: "/appointments", icon: CalendarDays },
-  // { label: "Messages", href: "/messages", icon: Bell, badge: "67" },
-  // { label: "Profile", href: "/profile", icon: UserRound },
   { label: "Settings", href: "/settings", icon: Settings },
   { label: "Dark Mode", href: "/dark-mode", icon: Moon },
-  // { label: "Test Page", href: "/testpage", icon: Search },
 ];
 
 export default function Sidebar() {
@@ -69,20 +65,17 @@ export default function Sidebar() {
       )}
     >
       <div className="flex h-screen flex-col z-10">
-        <div className="flex items-center justify-between border-b border-sidebar-border px-4 py-4">
+        <div className="flex items-center justify-between border-b border-sidebar-border p-4 gap-1 bg-primary/60">
           <div className={cn("flex items-center gap-3", !isOpen && "justify-center")}>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/20">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg text-primary ring-1 ring-primary/20">
               <PawPrint className="h-4 w-4" />
             </div>
 
             {isOpen && (
               <div>
-                <p className="text-sm font-semibold tracking-wide text-sidebar-foreground">
+                <h1 className="text-3xl font-serif font-bold tracking-wide text-sidebar-foreground">
                   PawMatch
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Adoption Hub
-                </p>
+                </h1>
               </div>
             )}
           </div>
@@ -90,7 +83,7 @@ export default function Sidebar() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            className="h-9 w-5 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-background"
             onClick={() => setIsOpen((prev) => !prev)}
             aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
@@ -103,7 +96,7 @@ export default function Sidebar() {
           </Button>
         </div>
 
-        <div className="px-3 py-4">
+        {/* <div className="px-3 py-4">
           <div
             className={cn(
               "flex items-center gap-2 rounded-xl border border-border bg-muted/60 px-3 py-2 text-muted-foreground",
@@ -115,9 +108,9 @@ export default function Sidebar() {
               Search
             </span>}
           </div>
-        </div>
+        </div> */}
         {/* Sidebar Contents */}
-        <ScrollArea className="flex-1 px-3 overflow-auto">
+        <ScrollArea className="flex-1 px-3 py-4 overflow-auto">
           <nav className="space-y-1.5">
             {navItems.map(({ label, href, icon: Icon, badge }) => {
               const active =
