@@ -109,7 +109,7 @@ export function MatchPreferencesForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-3">
       <FieldSet>
         <FieldLegend>Pet preferences</FieldLegend>
         <FieldDescription>
