@@ -2,11 +2,9 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Attributes\Description;
-use Illuminate\Console\Attributes\Signature;
+use App\Models\Pet;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use App\Models\Pet;
 use RuntimeException;
 use Throwable;
 
@@ -15,12 +13,14 @@ class ImportTestPets extends Command
     protected $signature = 'pets:import-test
         {--file= : Optional path to the CSV file}';
 
-    protected $description = 'Import test pets from a CSV file';
+    protected $description = 'Import synthetic test pets from a CSV file';
 
     public function handle(): int
     {
         $path = $this->option('file')
-            ?: database_path('seeders/data/pet_adoption_data.csv');
+            ?: database_path(
+                'seeders/data/pet_adoption_synthetic.csv'
+            );
 
         if (! is_file($path) || ! is_readable($path)) {
             $this->error("CSV file not found or unreadable: {$path}");
@@ -41,13 +41,17 @@ class ImportTestPets extends Command
                 throw new RuntimeException('CSV file is empty.');
             }
 
-            // Remove a UTF-8 BOM if present.
-            $headers[0] = preg_replace('/^\xEF\xBB\xBF/', '', $headers[0]);
+            $headers[0] = preg_replace(
+                '/^\xEF\xBB\xBF/',
+                '',
+                $headers[0]
+            );
 
             $required = [
                 'PetID', 'PetType', 'Breed', 'AgeMonths',
                 'Color', 'Size', 'WeightKg', 'Vaccinated',
                 'HealthCondition', 'TimeInShelterDays',
+                'Sex', 'ActivityLevel', 'Temperament',
             ];
 
             if (array_diff($required, $headers)) {
@@ -76,8 +80,16 @@ class ImportTestPets extends Command
                         ! is_numeric($row['AgeMonths']) ||
                         ! is_numeric($row['Vaccinated']) ||
                         ! is_numeric($row['HealthCondition']) ||
-                        ! in_array((string) $row['Vaccinated'], ['0', '1'], true) ||
-                        ! in_array((string) $row['HealthCondition'], ['0', '1'], true) ||
+                        ! in_array(
+                            (string) $row['Vaccinated'],
+                            ['0', '1'],
+                            true
+                        ) ||
+                        ! in_array(
+                            (string) $row['HealthCondition'],
+                            ['0', '1'],
+                            true
+                        ) ||
                         ! is_numeric($row['TimeInShelterDays']) ||
                         ! is_numeric($row['WeightKg']) ||
                         (float) $row['WeightKg'] < 0 ||
@@ -94,17 +106,37 @@ class ImportTestPets extends Command
                         ['external_pet_id' => $petId],
                         [
                             'name' => 'Test Pet ' . $petId,
-                            'pet_type' => strtolower(trim($row['PetType'])),
+                            'pet_type' => strtolower(
+                                trim($row['PetType'])
+                            ),
                             'breed' => trim($row['Breed']) ?: null,
                             'age_months' => (int) $row['AgeMonths'],
-                            'color' => strtolower(trim($row['Color'])),
-                            'size' => strtolower(trim($row['Size'])),
+                            'color' => strtolower(
+                                trim($row['Color'])
+                            ),
+                            'size' => strtolower(
+                                trim($row['Size'])
+                            ),
                             'weight_kg' => (float) $row['WeightKg'],
                             'vaccinated' => (bool) (int) $row['Vaccinated'],
                             'has_medical_condition' =>
                                 (bool) (int) $row['HealthCondition'],
                             'time_in_shelter_days' =>
                                 (int) $row['TimeInShelterDays'],
+
+                            // Synthetic matching attributes
+                            'sex' => strtolower(trim($row['Sex'])),
+                            'activity_level' => strtolower(
+                                trim($row['ActivityLevel'])
+                            ),
+                            'temperament' => array_values(array_filter(
+                                array_map(
+                                    'trim',
+                                    explode(';', (string) $row['Temperament'])
+                                ),
+                                static fn (string $trait): bool => $trait !== ''
+                            )),
+
                             'is_test_data' => true,
                             'status' => 'available',
                         ]

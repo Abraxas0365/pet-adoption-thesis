@@ -82,6 +82,51 @@ class MatchingControllerTest extends TestCase
         });
     }
 
+    public function test_it_normalizes_legacy_string_temperament_before_matching(): void
+    {
+        $pet = $this->createPet('legacy-temperament-1', 'available', false);
+        $pet->temperament = ' Calm ; FRIENDLY ';
+        $pet->save();
+
+        Http::fake([
+            '*/matching/batch' => function (ClientRequest $request) {
+                $body = $request->data();
+                $results = array_map(
+                    static fn (array $pet): array => [
+                        'pet_id' => $pet['pet_id'],
+                        'score' => 0.75,
+                        'scores' => [
+                            'weighted_cosine' => 0.5,
+                            'jaccard' => 0.5,
+                            'tversky' => 0.5,
+                        ],
+                        'final_scores' => [
+                            'weighted_cosine' => 0.75,
+                            'jaccard' => 0.75,
+                            'tversky' => 0.75,
+                        ],
+                    ],
+                    $body['pets'],
+                );
+
+                return Http::response([
+                    'status' => 'success',
+                    'message' => 'Matches generated successfully.',
+                    'algorithm' => $body['algorithm'],
+                    'score_scale' => '0_to_1',
+                    'total' => count($results),
+                    'results' => $results,
+                ]);
+            },
+        ]);
+
+        $this->postJson('/api/matching', ['adopter' => []])->assertOk();
+
+        Http::assertSent(static fn (ClientRequest $request): bool =>
+            $request->data()['pets'][0]['temperament'] === ['calm', 'friendly']
+        );
+    }
+
     public function test_it_returns_service_failure_instead_of_a_no_match_response(): void
     {
         $this->createPet('service-failure-1', 'available', false);

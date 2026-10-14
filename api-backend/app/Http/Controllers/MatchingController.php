@@ -120,9 +120,7 @@ class MatchingController extends Controller
             'size' => $this->normalizeNullableString($pet->size),
             'species' => strtolower((string) $pet->pet_type),
             'breed' => $this->normalizeNullableString($pet->breed),
-            'temperament' => $pet->temperament === null
-                ? null
-                : array_map('strtolower', $pet->temperament),
+            'temperament' => $this->normalizeTemperament($pet->temperament),
             'activity_level' => $this->normalizeNullableString($pet->activity_level),
             'medical_condition' => $pet->has_medical_condition
                 ? 'medical condition'
@@ -248,6 +246,23 @@ class MatchingController extends Controller
         }
 
         return strtolower(trim($value));
+    }
+
+    private function normalizeTemperament(array|string|null $value): ?array
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $traits = is_array($value) ? $value : explode(';', $value);
+
+        return array_values(array_filter(
+            array_map(
+                static fn (string $trait): string => strtolower(trim($trait)),
+                $traits
+            ),
+            static fn (string $trait): bool => $trait !== ''
+        ));
     }
 
     /**

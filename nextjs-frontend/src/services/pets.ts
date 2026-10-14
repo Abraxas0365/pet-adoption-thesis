@@ -14,7 +14,7 @@ type ApiPet = {
   weight_kg: number | string | null;
   color: string | null;
   size: string | null;
-  temperament: string[] | null;
+  temperament: string[] | string | null;
   activity_level: string | null;
   has_medical_condition: boolean;
   vaccinated: boolean;
@@ -36,6 +36,16 @@ export type PetPage = {
   lastPage: number;
   total: number;
 };
+
+function normalizeTemperament(value: ApiPet["temperament"]): string[] {
+  const traits = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(/[;,]/)
+      : [];
+
+  return traits.map((trait) => trait.trim()).filter(Boolean);
+}
 
 export async function fetchPets(
   pagenum: number,
@@ -62,7 +72,7 @@ export async function fetchPets(
       weight: pet.weight_kg === null ? null : Number(pet.weight_kg),
       color: pet.color,
       size: pet.size,
-      temperament: pet.temperament ?? [],
+      temperament: normalizeTemperament(pet.temperament),
       activity_level: pet.activity_level,
       medical_condition: pet.has_medical_condition
         ? "Medical condition"
