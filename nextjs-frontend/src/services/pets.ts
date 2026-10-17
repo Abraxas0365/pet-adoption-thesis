@@ -47,6 +47,44 @@ function normalizeTemperament(value: ApiPet["temperament"]): string[] {
   return traits.map((trait) => trait.trim()).filter(Boolean);
 }
 
+function mapApiPet(pet: ApiPet): Pet {
+  return {
+    id: pet.id,
+    external_pet_id: pet.external_pet_id,
+    name: pet.name,
+    species: pet.pet_type,
+    breed: pet.breed,
+    ageMonths: pet.age_months,
+    sex: pet.sex,
+    weight: pet.weight_kg === null ? null : Number(pet.weight_kg),
+    color: pet.color,
+    size: pet.size,
+    temperament: normalizeTemperament(pet.temperament),
+    activity_level: pet.activity_level,
+    medical_condition: pet.has_medical_condition
+      ? "Medical condition"
+      : "Healthy",
+    vaccination_status: pet.vaccinated ? "Vaccinated" : "Not vaccinated",
+    image_url: pet.image_url,
+    status: pet.status,
+    is_test_data: pet.is_test_data,
+  };
+}
+
+export async function fetchPetById(
+  petId: number,
+  signal?: AbortSignal,
+): Promise<Pet> {
+  const response = await fetch(`${API_URL}/api/pets/${petId}`, { signal });
+
+  if (!response.ok) {
+    throw new Error(`Unable to load pet details: API request failed (${response.status})`);
+  }
+
+  const pet: ApiPet = await response.json();
+  return mapApiPet(pet);
+}
+
 export async function fetchPets(
   pagenum: number,
   petsPerPage: number,
@@ -61,27 +99,7 @@ export async function fetchPets(
   const result: PetApiResponse = await response.json();
 
   return {
-    pets: result.data.map((pet) => ({
-      id: pet.id,
-      external_pet_id: pet.external_pet_id,
-      name: pet.name,
-      species: pet.pet_type,
-      breed: pet.breed,
-      ageMonths: pet.age_months,
-      sex: pet.sex,
-      weight: pet.weight_kg === null ? null : Number(pet.weight_kg),
-      color: pet.color,
-      size: pet.size,
-      temperament: normalizeTemperament(pet.temperament),
-      activity_level: pet.activity_level,
-      medical_condition: pet.has_medical_condition
-        ? "Medical condition"
-        : "Healthy",
-      vaccination_status: pet.vaccinated ? "Vaccinated" : "Not vaccinated",
-      image_url: pet.image_url,
-      status: pet.status,
-      is_test_data: pet.is_test_data,
-    })),
+    pets: result.data.map(mapApiPet),
     currentPage: result.current_page,
     lastPage: result.last_page,
     total: result.total,

@@ -26,3 +26,32 @@ export type MatchPreferencesFormProps = {
   ) => void | Promise<void>;
   isSubmitting?: boolean;
 };
+
+export type MatchingAlgorithm =
+  | "weighted_cosine"
+  | "jaccard"
+  | "tversky";
+
+export type MatchingScoreBreakdown = Record<MatchingAlgorithm, number>;
+
+export type MatchingResult = {
+  pet_id: number;
+  name: string;
+  species: string;
+  breed: string | null;
+  age_months: number | null;
+  sex: string | null;
+  image_url: string | null;
+  score: number;
+  scores: MatchingScoreBreakdown;
+  final_scores: MatchingScoreBreakdown;
+};
+
+export type MatchingResponse = {
+  status: "success";
+  message: string;
+  algorithm: MatchingAlgorithm;
+  score_scale: "0_to_1";
+  total: number;
+  results: MatchingResult[];
+};
