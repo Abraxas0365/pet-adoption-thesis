@@ -64,11 +64,11 @@ BREEDS = [
 
 FEATURE_WEIGHTS = {
     "species": 5.0,
-    "sex": 2.0,
-    "size": 3.0,
+    "sex": 4.0,
+    "size": 2.0,
     "color": 1.0,
-    "temperament": 4.0,
-    "activity_level": 3.0,
+    "temperament": 3.5,
+    "activity_level": 1.0,
 }
 
 SCORE_WEIGHTS = {
