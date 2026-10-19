@@ -72,9 +72,9 @@ FEATURE_WEIGHTS = {
 }
 
 SCORE_WEIGHTS = {
-    "algorithm": 0.8,
-    "age": 0.1,
-    "weight": 0.1
+    "algorithm": 0.9,
+    "age": 0.05,
+    "weight": 0.05
 }
 
 VECTOR_WEIGHTS = (
