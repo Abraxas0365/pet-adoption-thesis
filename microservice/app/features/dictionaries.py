@@ -57,9 +57,28 @@ COLORS = [
     "cream",
 ]
 
+BREEDS_BY_SPECIES = {
+    "dog": [
+        "golden retriever",
+        "labrador",
+        "poodle",
+    ],
+    "cat": [
+        "persian",
+        "siamese",
+    ],
+    "bird": [
+        "parakeet",
+    ],
+    "rabbit": [
+        "rabbit",
+    ],
+}
+
 BREEDS = [
-    'aspin',
-    'puspin',
+    breed
+    for species in SPECIES
+    for breed in BREEDS_BY_SPECIES[species]
 ]
 
 FEATURE_WEIGHTS = {
@@ -69,6 +88,7 @@ FEATURE_WEIGHTS = {
     "color": 1.0,
     "temperament": 5.5,
     "activity_level": 3.0,
+    "breed": 4.0,
 }
 
 SCORE_WEIGHTS = {
@@ -84,4 +104,5 @@ VECTOR_WEIGHTS = (
     + [FEATURE_WEIGHTS["color"]] * len(COLORS)
     + [FEATURE_WEIGHTS["temperament"]] * len(TEMPERAMENTS)
     + [FEATURE_WEIGHTS["activity_level"]] * len(ACTIVITY_LEVEL)
+    + [FEATURE_WEIGHTS["breed"]] * len(BREEDS)
 )

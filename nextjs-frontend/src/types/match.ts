@@ -11,7 +11,7 @@ export type MatchPreferences = {
   preferred_age_max: number | null;
   preferred_weight_min: number | null;
   preferred_weight_max: number | null;
-  preferred_breed: string;
+  preferred_breed: string[];
 
   home_type: string;
   has_other_animals: boolean;

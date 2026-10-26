@@ -21,7 +21,7 @@ import { Spinner } from "@/components/ui/spinner";
 import usePets from "@/hooks/usePets";
 import { useState } from "react";
 
-export default function BrowsePetsPage() {
+export default function BrowsePetsView() {
   const [pagenum, setPageNum] = useState(1);
   const [petsPerPage, setPetsPerPage] = useState(24);
   const { pets, lastPage, total, loading, error } = usePets(

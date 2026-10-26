@@ -5,22 +5,10 @@ const API_URL =
 
 
 
-export type MatchingAdopterPayload = Omit<
-  MatchPreferences,
-  "preferred_breed"
-> & {
-  preferred_breed: string[];
-};
+export type MatchingAdopterPayload = MatchPreferences;
 
 function normalizeArray(value: string[] | undefined): string[] {
   return (value ?? [])
-    .map((item) => item.trim().toLowerCase())
-    .filter(Boolean);
-}
-
-function normalizeBreed(value: string): string[] {
-  return value
-    .split(/[\n,]/)
     .map((item) => item.trim().toLowerCase())
     .filter(Boolean);
 }
@@ -59,7 +47,7 @@ export function toMatchingPayload(
     preferred_age_max: preferences.preferred_age_max,
     preferred_weight_min: preferences.preferred_weight_min,
     preferred_weight_max: preferences.preferred_weight_max,
-    preferred_breed: normalizeBreed(preferences.preferred_breed),
+    preferred_breed: normalizeArray(preferences.preferred_breed),
     home_type: preferences.home_type,
     has_other_animals: preferences.has_other_animals,
     other_animals: normalizeArray(preferences.other_animals),

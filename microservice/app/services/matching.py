@@ -8,6 +8,8 @@ from app.algorithms.tversky import tversky_similarity
 from app.features.adopter import adopter_to_vector
 from app.features.dictionaries import (
     ACTIVITY_LEVEL,
+    BREEDS,
+    BREEDS_BY_SPECIES,
     COLORS,
     SCORE_WEIGHTS,
     SEX,
@@ -29,6 +31,7 @@ FEATURE_GROUPS = (
     ("preferred_color", "color", COLORS, False),
     ("preferred_temperament", "temperament", TEMPERAMENTS, True),
     ("preferred_activity_level", "activity_level", ACTIVITY_LEVEL, False),
+    ("preferred_breed", "breed", BREEDS, False),
 )
 
 
@@ -44,23 +47,40 @@ def calculate_match_scores(
     for preference_field, pet_field, categories, is_multi in FEATURE_GROUPS:
         width = len(categories)
         requested_values = getattr(adopter, preference_field)
-        requested_categories = {
-            value.strip().lower()
-            for value in requested_values
-            if value.strip().lower() in categories
-        }
         pet_value = getattr(pet, pet_field)
 
-        if is_multi:
-            pet_is_known = pet_value is not None and (
-                not pet_value
-                or any(value.strip().lower() in categories for value in pet_value)
-            )
-        else:
+        if preference_field == "preferred_breed":
+            pet_species = pet.species.strip().lower() if pet.species else ""
+            species_breeds = BREEDS_BY_SPECIES.get(pet_species, [])
+            requested_categories = {
+                value.strip().lower()
+                for value in requested_values
+                if value.strip().lower() in species_breeds
+            }
             pet_is_known = (
                 isinstance(pet_value, str)
-                and pet_value.strip().lower() in categories
+                and pet_value.strip().lower() in species_breeds
             )
+        else:
+            requested_categories = {
+                value.strip().lower()
+                for value in requested_values
+                if value.strip().lower() in categories
+            }
+
+            if is_multi:
+                pet_is_known = pet_value is not None and (
+                    not pet_value
+                    or any(
+                        value.strip().lower() in categories
+                        for value in pet_value
+                    )
+                )
+            else:
+                pet_is_known = (
+                    isinstance(pet_value, str)
+                    and pet_value.strip().lower() in categories
+                )
 
         if requested_categories and pet_is_known:
             comparable_indices.extend(range(offset, offset + width))

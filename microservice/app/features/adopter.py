@@ -7,6 +7,7 @@ from app.features.dictionaries import (
     COLORS,
     TEMPERAMENTS,
     ACTIVITY_LEVEL,
+    BREEDS,
 )
 
 from app.features.encoding_functions import *
@@ -49,6 +50,11 @@ def adopter_to_vector(adopter: AdopterSchema) -> list[float]:
             adopter.preferred_activity_level,
             ACTIVITY_LEVEL,
         )
+    )
+
+    # Preferred breed
+    vector.extend(
+        multi_hot(adopter.preferred_breed, BREEDS)
     )
 
     return vector

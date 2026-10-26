@@ -21,6 +21,14 @@ import {
   ComboboxList,
   ComboboxValue,
 } from "@/components/ui/combobox";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { MATCH_OPTIONS, HOME_OPTIONS } from "@/lib/definitions";
 import type {
@@ -40,6 +48,22 @@ const options = {
   home: HOME_OPTIONS,
 } as const;
 
+type Species = (typeof MATCH_OPTIONS.species)[number];
+
+function isSpecies(value: string): value is Species {
+  return MATCH_OPTIONS.species.some((species) => species === value);
+}
+
+function getBreedOptions(species: readonly string[]) {
+  return [
+    ...new Set(
+      species
+        .filter(isSpecies)
+        .flatMap((selectedSpecies) => MATCH_OPTIONS.breeds[selectedSpecies]),
+    ),
+  ];
+}
+
 const initialValues: MatchPreferences = {
   preferred_species: [],
   preferred_sex: [],
@@ -51,7 +75,7 @@ const initialValues: MatchPreferences = {
   preferred_age_max: null,
   preferred_weight_min: null,
   preferred_weight_max: null,
-  preferred_breed: "",
+  preferred_breed: [],
   home_type: "house",
   has_other_animals: false,
   other_animals: [],
@@ -66,6 +90,7 @@ export function MatchPreferencesForm({
   const [values, setValues] =
     useState<MatchPreferences>({ ...initialValues });
   const [validationError, setValidationError] = useState<string | null>(null);
+  const breedOptions = getBreedOptions(values.preferred_species);
 
   function update<K extends keyof MatchPreferences>(
     key: K,
@@ -122,9 +147,17 @@ export function MatchPreferencesForm({
             label="Species"
             items={options.species}
             value={values.preferred_species}
-            onChange={(value) =>
-              update("preferred_species", value)
-            }
+            onChange={(value) => {
+              const availableBreeds = getBreedOptions(value);
+              setValidationError(null);
+              setValues((current) => ({
+                ...current,
+                preferred_species: value,
+                preferred_breed: current.preferred_breed.filter((selectedBreed) =>
+                  availableBreeds.some((breed) => breed === selectedBreed),
+                ),
+              }));
+            }}
           />
 
           <MultiSelectField
@@ -173,16 +206,17 @@ export function MatchPreferencesForm({
             }
           />
 
-          <Field>
-            <FieldLabel>Preferred breed</FieldLabel>
-            <Input
-              value={values.preferred_breed}
-              onChange={(event) =>
-                update("preferred_breed", event.target.value)
-              }
-              placeholder="Leave blank for any breed"
-            />
-          </Field>
+          <MultiSelectField
+            label="Preferred breed"
+            description={
+              breedOptions.length === 0
+                ? "Choose a species to see breed options."
+                : "Choose any breeds you prefer, or leave empty for any breed."
+            }
+            items={breedOptions}
+            value={values.preferred_breed}
+            onChange={(value) => update("preferred_breed", value)}
+          />
 
           <Field>
             <FieldLabel>Age range (months)</FieldLabel>

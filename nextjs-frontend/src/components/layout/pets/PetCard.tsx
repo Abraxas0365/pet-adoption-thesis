@@ -1,13 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Pet } from "@/types/pets";
-
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
-
 import { Badge } from "@/components/ui/badge";
-
 import { Button } from "@/components/ui/button";
+import GuestAuthPrompt from "@/components/layout/GuestAuthPrompt";
 
 import {
   Dialog,
@@ -24,6 +24,9 @@ type PetCardProps = {
 
 export default function PetCard({ pet }: PetCardProps) {
   const [open, setOpen] = useState(false);
+  const [isGuestPromptOpen, setIsGuestPromptOpen] = useState(false);
+  const router = useRouter();
+  const session = useAuth();
 
   const imageUrl = pet.image_url;
 
@@ -206,7 +209,26 @@ export default function PetCard({ pet }: PetCardProps) {
         <Button className="w-full" onClick={() => setOpen(false)}>
           Close
         </Button>
+        <Button
+          type="button"
+          className="w-full"
+          onClick={() => {
+            if (!session) {
+              setIsGuestPromptOpen(true);
+              return;
+            }
+
+            setOpen(false);
+            router.push(`/adopt?petId=${pet.id}`);
+          }}
+        >
+          Adopt me!
+        </Button>
       </DialogContent>
+      <GuestAuthPrompt
+        open={isGuestPromptOpen}
+        onOpenChange={setIsGuestPromptOpen}
+      />
     </Dialog>
   );
 }

@@ -1,23 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Bell,
-  CalendarDays,
   ChevronLeft,
   Heart,
   Home,
+  LogIn,
+  LogOut,
+  Moon,
   PawPrint,
   Search,
-  Settings,
   UserRound,
-  Moon,
+  Bell,
+  CircleOff,
   type LucideIcon,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAuth } from "@/hooks/useAuth";
+import { logout } from "@/services/auth";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -25,20 +29,37 @@ type NavItem = {
   href: string;
   icon: LucideIcon;
   badge?: string;
+  requiresAuth?: boolean;
 };
 
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/", icon: Home },
   { label: "Browse Pets", href: "/pets", icon: PawPrint },
-  { label: "Favorites", href: "/favorites", icon: Heart, badge: "12" },
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Find Your Match", href: "/match", icon: Search },
+  {
+    label: "Notification",
+    href: "/notification",
+    icon: Bell,
+    badge: "12",
+    requiresAuth: true,
+  },
+  {
+    label: "Surrender Pet",
+    href: "/surrender",
+    icon: CircleOff,
+    requiresAuth: true,
+  },
+  // { label: "Settings", href: "/settings", icon: Settings },
   { label: "Dark Mode", href: "/dark-mode", icon: Moon },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const session = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     const storedTheme = window.localStorage.getItem("theme");
@@ -57,16 +78,48 @@ export default function Sidebar() {
     window.localStorage.setItem("theme", dark ? "dark" : "light");
   };
 
+  async function handleLogout() {
+    if (!session) {
+      return;
+    }
+
+    setAuthError(null);
+
+    try {
+      await logout(session.token);
+      setIsProfileMenuOpen(false);
+    } catch (error) {
+      setAuthError(
+        error instanceof Error ? error.message : "Unable to log out.",
+      );
+    }
+  }
+
+  const initials = session
+    ? session.user.name
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0])
+        .join("")
+        .toUpperCase()
+    : "G";
+
   return (
     <aside
       className={cn(
         "border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all duration-200 z-10",
-        isOpen ? "w-72" : "w-20"
+        isOpen ? "w-72" : "w-20",
       )}
     >
       <div className="flex h-screen flex-col z-10">
         <div className="flex items-center justify-between border-b border-sidebar-border p-4 gap-1 bg-primary/60">
-          <div className={cn("flex items-center gap-3", !isOpen && "justify-center")}>
+          <div
+            className={cn(
+              "flex items-center gap-3",
+              !isOpen && "justify-center",
+            )}
+          >
             <div className="flex h-9 w-9 items-center justify-center rounded-lg text-primary ring-1 ring-primary/20">
               <PawPrint className="h-4 w-4" />
             </div>
@@ -90,7 +143,7 @@ export default function Sidebar() {
             <ChevronLeft
               className={cn(
                 "h-4 w-4 transition-transform",
-                !isOpen && "rotate-180"
+                !isOpen && "rotate-180",
               )}
             />
           </Button>
@@ -112,89 +165,150 @@ export default function Sidebar() {
         {/* Sidebar Contents */}
         <ScrollArea className="flex-1 px-3 py-4 overflow-auto">
           <nav className="space-y-1.5">
-            {navItems.map(({ label, href, icon: Icon, badge }) => {
-              const active =
-                href === "/"
-                  ? pathname === href
-                  : pathname === href || pathname.startsWith(`${href}/`);
+            {navItems
+              .filter((item) => !item.requiresAuth || session !== null)
+              .map(({ label, href, icon: Icon, badge }) => {
+                const active =
+                  href === "/"
+                    ? pathname === href
+                    : pathname === href || pathname.startsWith(`${href}/`);
 
-              return (
-                <a
-                  key={label}
-                  href={href}
-                  onClick={
-                    label === "Dark Mode"
-                      ? (event) => {
-                          event.preventDefault();
-                          toggleDarkMode();
-                        }
-                      : undefined
-                  }
-                  aria-current={active ? "page" : undefined}
-                  aria-pressed={label === "Dark Mode" ? isDarkMode : undefined}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
-                    active
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground",
-                    !isOpen ? "justify-center px-2" : "justify-start"
-                  )}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {isOpen && (
-                    <>
-                      <span className="flex-1">{label}</span>
-                      {label === "Dark Mode" && (
-                        <span
-                          aria-hidden="true"
-                          className={cn(
-                            "relative h-5 w-9 shrink-0 rounded-full transition-colors",
-                            isDarkMode ? "bg-primary" : "bg-muted-foreground/30"
-                          )}
-                        >
+                return (
+                  <a
+                    key={label}
+                    href={href}
+                    onClick={
+                      label === "Dark Mode"
+                        ? (event) => {
+                            event.preventDefault();
+                            toggleDarkMode();
+                          }
+                        : undefined
+                    }
+                    aria-current={active ? "page" : undefined}
+                    aria-pressed={
+                      label === "Dark Mode" ? isDarkMode : undefined
+                    }
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
+                      active
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                      !isOpen ? "justify-center px-2" : "justify-start",
+                    )}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    {isOpen && (
+                      <>
+                        <span className="flex-1">{label}</span>
+                        {label === "Dark Mode" && (
                           <span
+                            aria-hidden="true"
                             className={cn(
-                              "absolute top-0.5 h-4 w-4 rounded-full bg-background shadow transition-transform",
-                              isDarkMode ? "translate-x-4" : "translate-x-0.5"
+                              "relative h-5 w-9 shrink-0 rounded-full transition-colors",
+                              isDarkMode
+                                ? "bg-primary"
+                                : "bg-muted-foreground/30",
                             )}
-                          />
-                        </span>
-                      )}
-                      {badge && (
-                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                          {badge}
-                        </span>
-                      )}
-                    </>
-                  )}
-                </a>
-              );
-            })}
+                          >
+                            <span
+                              className={cn(
+                                "absolute top-0.5 h-4 w-4 rounded-full bg-background shadow transition-transform",
+                                isDarkMode
+                                  ? "translate-x-4"
+                                  : "translate-x-0.5",
+                              )}
+                            />
+                          </span>
+                        )}
+                        {badge && (
+                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                            {badge}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </a>
+                );
+              })}
           </nav>
         </ScrollArea>
 
-        <div className="border-t border-sidebar-border p-3">
-          <div
+        <div className="relative border-t border-sidebar-border p-3">
+          <button
+            type="button"
+            aria-haspopup="menu"
+            aria-expanded={isProfileMenuOpen}
+            onClick={() => {
+              setAuthError(null);
+              setIsProfileMenuOpen((open) => !open);
+            }}
             className={cn(
-              "flex items-center gap-3 rounded-xl bg-accent/40 p-3",
-              !isOpen && "justify-center p-2"
+              "flex w-full items-center gap-3 rounded-xl bg-accent/40 p-3 text-left transition-colors hover:bg-accent/70",
+              !isOpen && "justify-center p-2",
             )}
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-rose-400 to-orange-300 text-sm font-semibold text-slate-950">
-              JD
+              {initials}
             </div>
 
             {isOpen && (
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-foreground">
-                  Jamie Doe
+                  {session?.user.name ?? "Guest"}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
-                  Volunteer
+                  {session?.user.email ?? "Guest account"}
                 </p>
               </div>
             )}
-          </div>
+          </button>
+
+          {isProfileMenuOpen && (
+            <div
+              role="menu"
+              aria-label="Account menu"
+              className="absolute bottom-full left-3 right-3 z-20 mb-2 rounded-xl border bg-popover p-1.5 text-popover-foreground shadow-lg"
+            >
+              {session ? (
+                <>
+                  <Link
+                    href="/profile"
+                    role="menuitem"
+                    onClick={() => setIsProfileMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
+                  >
+                    <UserRound className="h-4 w-4" />
+                    Profile
+                  </Link>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => void handleLogout()}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Log out
+                  </button>
+                </>
+              ) : (
+                <Link
+                  href="/login"
+                  role="menuitem"
+                  onClick={() => setIsProfileMenuOpen(false)}
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
+                >
+                  <LogIn className="h-4 w-4" />
+                  Log in / Register
+                </Link>
+              )}
+              {authError && (
+                <p role="alert" className="px-3 py-2 text-xs text-destructive">
+                  {authError}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </aside>

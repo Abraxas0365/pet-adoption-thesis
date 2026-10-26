@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,8 +15,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { fetchPetById } from "@/services/pets";
+import { useAuth } from "@/hooks/useAuth";
 import type { MatchingAlgorithm, MatchingResult } from "@/types/match";
 import type { Pet } from "@/types/pets";
+import GuestAuthPrompt from "@/components/layout/GuestAuthPrompt";
 
 type MatchResultsCardProps = {
   match: MatchingResult;
@@ -30,6 +33,9 @@ export default function MatchResultsCard({
   const [pet, setPet] = useState<Pet | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState<string | null>(null);
+  const [isGuestPromptOpen, setIsGuestPromptOpen] = useState(false);
+  const router = useRouter();
+  const session = useAuth();
   const imageUrl =
     match.image_url ??
     `/images/pets-default/${match.species.toLowerCase()}.jpg`;
@@ -220,10 +226,26 @@ export default function MatchResultsCard({
           </div>
         </section>
 
-        <Button type="button" className="w-full">
-          Add to favorites
+        <Button
+          type="button"
+          className="w-full"
+          onClick={() => {
+            if (!session) {
+              setIsGuestPromptOpen(true);
+              return;
+            }
+
+            setOpen(false);
+            router.push(`/adopt?petId=${match.pet_id}`);
+          }}
+        >
+          Adopt me!
         </Button>
       </DialogContent>
+      <GuestAuthPrompt
+        open={isGuestPromptOpen}
+        onOpenChange={setIsGuestPromptOpen}
+      />
     </Dialog>
   );
 }

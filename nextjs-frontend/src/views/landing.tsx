@@ -1,41 +1,79 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import GuestAuthPrompt from "@/components/layout/GuestAuthPrompt";
+import { useAuth } from "@/hooks/useAuth";
 // import Sidebar from "@/components/layout/Sidebar";
 
 export default function Landing() {
+  const router = useRouter();
+  const session = useAuth();
+  const [isGuestPromptOpen, setIsGuestPromptOpen] = useState(false);
+
   return (
-    <main className="flex-1 overflow-x-hidden min-h-screen min-w-0 max-w-screen">
-      {/* Background image */}
-      <div
-        className="flex-row flex min-h-screen min-w-full max-w-screen gap-6 overflow-hidden opacity-70 bg-cover bg-center"
-        style={{
-          backgroundImage: "url('/images/pets-background.jpg')",
-        }}
-      >
-        {/* overlay */}
-        <div className="absolute inset-0 bg-background opacity-65 z-1 min-h-screen w-full"></div>
-        {/* content */}
-        <div className="relative z-10 flex flex-row w-full min-h-screen">
-          <section className="flex max-w-screen flex-1 flex-col items-center justify-center gap-6 text-center z-2 text-popover-foreground">
-            <h1 className="text-5xl font-bold text-foreground">
-              Find Your Perfect Companion
-            </h1>
+    <>
+      <main className="flex-1 overflow-x-hidden min-h-screen min-w-0 max-w-screen">
+        {/* Background image */}
+        <div
+          className="flex-row flex min-h-screen min-w-full max-w-screen gap-6 overflow-hidden opacity-70 bg-cover bg-center"
+          style={{
+            backgroundImage: "url('/images/pets-background.jpg')",
+          }}
+        >
+          {/* overlay */}
+          <div className="absolute inset-0 bg-background opacity-65 z-1 min-h-screen w-full"></div>
+          {/* content */}
+          <div className="relative z-10 flex flex-row w-full min-h-screen">
+            <section className="flex max-w-screen flex-1 flex-col items-center justify-center gap-6 text-center z-2 text-popover-foreground">
+              <h1 className="text-5xl font-bold text-foreground">
+                Find Your Perfect Companion
+              </h1>
 
-            <p className="max-w-xl text-accent-foreground">
-              PawMatch helps you discover pets that match your lifestyle,
-              preferences, and home.
-            </p>
+              <p className="max-w-xl text-accent-foreground">
+                PawMatch helps you discover pets that match your lifestyle,
+                preferences, and home.
+              </p>
 
-            <div className="flex gap-4">
-              <Button variant="default" onClick={() => (window.location.href = "/match")}>
-                Find Your Match
-              </Button>
-              <Button variant="outline" onClick={() => window.location.href = "/pets"}>
-                Browse Pets
-              </Button>
-            </div>
-          </section>
+              <div className="flex flex-col gap-4">
+                <div>
+                  <Button
+                    variant="default"
+                    onClick={() => router.push("/match")}
+                  >
+                    Find Your Match
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push("/pets")}
+                  >
+                    Browse Pets
+                  </Button>
+                </div>
+                <div>
+                  <Button
+                    variant="default"
+                    onClick={() => {
+                      if (session) {
+                        router.push("/rescue");
+                      } else {
+                        setIsGuestPromptOpen(true);
+                      }
+                    }}
+                  >
+                    Report a Rescue
+                  </Button>
+                </div>
+              </div>
+            </section>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+      <GuestAuthPrompt
+        open={isGuestPromptOpen}
+        onOpenChange={setIsGuestPromptOpen}
+      />
+    </>
   );
 }

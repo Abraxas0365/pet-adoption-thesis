@@ -31,6 +31,7 @@ def pet(
     pet_id: int,
     *,
     species: str | None = "dog",
+    breed: str | None = None,
     sex: str | None = "male",
     size: str | None = "small",
     color: str | None = "brown",
@@ -43,6 +44,7 @@ def pet(
         pet_id=pet_id,
         name=f"Pet {pet_id}",
         species=species,
+        breed=breed,
         sex=sex,
         size=size,
         color=color,
@@ -82,6 +84,49 @@ class MatchingTests(unittest.TestCase):
         )
 
         self.assertEqual(without_color_preference, with_unknown_color)
+
+    def test_breed_preferences_only_affect_matching_species(self) -> None:
+        preferences = adopter(
+            preferred_species=["dog"],
+            preferred_breed=["Golden Retriever"],
+        )
+        exact_breed = calculate_match_scores(
+            preferences,
+            pet(1, breed="golden retriever"),
+        )
+        different_breed = calculate_match_scores(
+            preferences,
+            pet(2, breed="poodle"),
+        )
+
+        for algorithm in ("weighted_cosine", "jaccard", "tversky"):
+            self.assertGreater(exact_breed[algorithm], different_breed[algorithm])
+
+        without_breed_preference = calculate_match_scores(
+            adopter(preferred_species=["dog", "cat"]),
+            pet(3, species="cat", breed="persian"),
+        )
+        cat_and_dog_preferences = adopter(
+            preferred_species=["dog", "cat"],
+            preferred_breed=["Golden Retriever"],
+        )
+        with_wrong_species_breed_preference = calculate_match_scores(
+            cat_and_dog_preferences,
+            pet(3, species="cat", breed="persian"),
+        )
+        with_misclassified_pet_breed = calculate_match_scores(
+            cat_and_dog_preferences,
+            pet(3, species="cat", breed="golden retriever"),
+        )
+
+        self.assertEqual(
+            without_breed_preference,
+            with_wrong_species_breed_preference,
+        )
+        self.assertEqual(
+            without_breed_preference,
+            with_misclassified_pet_breed,
+        )
 
     def test_unspecified_preferences_are_neutral(self) -> None:
         scores = calculate_match_scores(adopter(), pet(1))
