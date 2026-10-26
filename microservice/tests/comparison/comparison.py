@@ -44,6 +44,10 @@ TOP_K = 1000
 TIMING_REPEATS = 20
 RANDOM_SEED = 42
 
+# Expert-established screening criteria. Similarity scores must be on a 0-1 scale.
+COMPATIBILITY_THRESHOLD = 0.80
+MISMATCH_THRESHOLD = 3  # Flag when more than three preference fields mismatch.
+
 ALGORITHMS: dict[str, Callable] = {
     "weighted_cosine": lambda a, b: weighted_cosine_similarity(
         a, b, VECTOR_WEIGHTS
@@ -130,6 +134,13 @@ PROFILE_DATA = [
          preferred_color=["white", "cream", "brown"],
          preferred_temperament=["friendly", "patient"],
          preferred_activity_level=["low", "moderate"]),
+    
+    dict(name="P11_no_multi_selection", preferred_species=["dog"],
+         preferred_sex=["female"],
+         preferred_size=["medium"],
+         preferred_color=["white"],
+         preferred_temperament=["patient"],
+         preferred_activity_level=["moderate"]),
 ]
 
 
@@ -189,6 +200,14 @@ def load_pets(path: Path) -> list[dict]:
             pets.append({
                 "pet_id": str(row["PetID"]),
                 "vector": pet_to_vector(pet),
+                "attributes": {
+                    "species": pet.species,
+                    "sex": pet.sex,
+                    "size": pet.size,
+                    "color": pet.color,
+                    "temperament": pet.temperament,
+                    "activity_level": pet.activity_level,
+                },
             })
 
     if not pets:
@@ -501,6 +520,157 @@ def evaluate_stability(
     return summary
 
 
+
+# --------------------------------------------------
+# Expert-threshold screening evaluation
+# --------------------------------------------------
+
+PREFERENCE_TO_PET_FIELD = {
+    "preferred_species": "species",
+    "preferred_sex": "sex",
+    "preferred_size": "size",
+    "preferred_color": "color",
+    "preferred_temperament": "temperament",
+    "preferred_activity_level": "activity_level",
+}
+
+
+def normalize_values(value) -> set[str]:
+    """Convert a scalar or list of values into lowercase strings."""
+    if value is None:
+        return set()
+    values = value if isinstance(value, (list, tuple, set)) else [value]
+    return {str(item).strip().lower() for item in values if str(item).strip()}
+
+
+def get_mismatched_attributes(profile_data: dict, pet_attributes: dict) -> list[str]:
+    """
+    Count field-level mismatches between one adopter's preferences and one pet.
+
+    A field matches when at least one preferred value overlaps the pet's value(s).
+    Temperament is treated as a match if any selected temperament overlaps.
+    """
+    mismatches = []
+
+    for preference_field, pet_field in PREFERENCE_TO_PET_FIELD.items():
+        preferences = normalize_values(profile_data.get(preference_field))
+        pet_values = normalize_values(pet_attributes.get(pet_field))
+
+        # Do not count a field if the adopter has no preference for it.
+        if not preferences:
+            continue
+
+        if not preferences.intersection(pet_values):
+            mismatches.append(pet_field)
+
+    return mismatches
+
+
+def evaluate_expert_threshold(
+    prepared_profiles: list[tuple[str, dict, list[float]]],
+    pets: list[dict],
+    pet_vectors: list[list[float]],
+) -> tuple[list[dict], list[dict]]:
+    """
+    Apply the expert-established >=80% threshold and flag high-scoring pairs
+    with more than three mismatched fields.
+
+    This is a screening analysis, not independently verified accuracy:
+    no expert suitability label is available for each adopter-pet pair.
+    """
+    detail_rows = []
+
+    for profile_name, profile_data, profile_vector in prepared_profiles:
+        scores_by_algorithm = score_all(profile_vector, pet_vectors)
+
+        for algorithm, scores in scores_by_algorithm.items():
+            ranking = ranked_indices(scores, pets)
+            rank_by_index = {pet_index: rank for rank, pet_index in enumerate(ranking, start=1)}
+
+            for index, score in enumerate(scores):
+                mismatches = get_mismatched_attributes(
+                    profile_data,
+                    pets[index]["attributes"],
+                )
+                meets_threshold = score >= COMPATIBILITY_THRESHOLD
+                potential_false_positive = (
+                    meets_threshold and len(mismatches) > MISMATCH_THRESHOLD
+                )
+
+                detail_rows.append({
+                    "profile": profile_name,
+                    "algorithm": algorithm,
+                    "pet_id": pets[index]["pet_id"],
+                    "rank": rank_by_index[index],
+                    "similarity_score": f"{score:.10f}",
+                    "mismatch_count": len(mismatches),
+                    "mismatched_attributes": ";".join(mismatches),
+                    "meets_80_percent_threshold": int(meets_threshold),
+                    "potential_false_positive_flag": int(potential_false_positive),
+                })
+
+    detail_fields = [
+        "profile",
+        "algorithm",
+        "pet_id",
+        "rank",
+        "similarity_score",
+        "mismatch_count",
+        "mismatched_attributes",
+        "meets_80_percent_threshold",
+        "potential_false_positive_flag",
+    ]
+    write_csv(RESULTS_DIR / "threshold_evaluation.csv", detail_fields, detail_rows)
+
+    summary_rows = []
+    total_pairs = len(prepared_profiles) * len(pets)
+
+    for algorithm in ALGORITHMS:
+        rows = [row for row in detail_rows if row["algorithm"] == algorithm]
+        high_score_rows = [
+            row for row in rows
+            if row["meets_80_percent_threshold"] == 1
+        ]
+        flagged_rows = [
+            row for row in rows
+            if row["potential_false_positive_flag"] == 1
+        ]
+
+        summary_rows.append({
+            "algorithm": algorithm,
+            "profiles": len(prepared_profiles),
+            "pets": len(pets),
+            "total_adopter_pet_pairs": total_pairs,
+            "pairs_at_or_above_80_percent": len(high_score_rows),
+            "threshold_attainment_rate_pct": (
+                f"{len(high_score_rows) / len(rows) * 100:.2f}" if rows else "0.00"
+            ),
+            "potential_false_positive_flags": len(flagged_rows),
+            "potential_false_positive_rate_among_high_scores_pct": (
+                f"{len(flagged_rows) / len(high_score_rows) * 100:.2f}"
+                if high_score_rows else "N/A"
+            ),
+        })
+
+    summary_fields = [
+        "algorithm",
+        "profiles",
+        "pets",
+        "total_adopter_pet_pairs",
+        "pairs_at_or_above_80_percent",
+        "threshold_attainment_rate_pct",
+        "potential_false_positive_flags",
+        "potential_false_positive_rate_among_high_scores_pct",
+    ]
+    write_csv(
+        RESULTS_DIR / "threshold_summary.csv",
+        summary_fields,
+        summary_rows,
+    )
+
+    return detail_rows, summary_rows
+
+
 # --------------------------------------------------
 # Console output
 # --------------------------------------------------
@@ -510,6 +680,7 @@ def print_summaries(
     profiles_count: int,
     execution_summary: list[dict],
     stability_summary: list[dict],
+    threshold_summary: list[dict],
 ) -> None:
     print(f"Loaded {pets_count:,} pets and {profiles_count} adopter profiles.")
     print(f"Timing runs per algorithm: {TIMING_REPEATS}")
@@ -527,6 +698,16 @@ def print_summaries(
     for row in stability_summary:
         column = f"mean_overlap_top_{TOP_K}"
         print(f"  {row['algorithm']:<16} mean={row[column]}")
+
+    print("\nExpert-threshold screening (score >= 80%; flags require >3 mismatches):")
+    for row in threshold_summary:
+        print(
+            f"  {row['algorithm']:<16} "
+            f"threshold attainment={row['threshold_attainment_rate_pct']}% | "
+            f"potential FP flags={row['potential_false_positive_flags']} | "
+            f"flag rate among high scores="
+            f"{row['potential_false_positive_rate_among_high_scores_pct']}%"
+        )
 
 
 # --------------------------------------------------
@@ -548,12 +729,16 @@ def main() -> None:
     stability_summary = evaluate_stability(
         profiles, pets, pet_vectors, baseline_rankings
     )
+    _, threshold_summary = evaluate_expert_threshold(
+        profiles, pets, pet_vectors
+    )
 
     print_summaries(
         len(pets),
         len(profiles),
         execution_summary,
         stability_summary,
+        threshold_summary,
     )
 
 

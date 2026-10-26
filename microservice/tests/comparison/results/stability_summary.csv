@@ -1,4 +1,4 @@
 algorithm,profiles,perturbations_per_profile,mean_overlap_top_1000,median_overlap_top_1000,stdev
-weighted_cosine,10,4,0.807894,0.834888,0.084232
-jaccard,10,4,0.687895,0.692953,0.080934
-tversky,10,4,0.687895,0.692953,0.080934
+weighted_cosine,11,4,0.777690,0.792115,0.133229
+jaccard,11,4,0.687650,0.692953,0.080192
+tversky,11,4,0.687650,0.692953,0.080192

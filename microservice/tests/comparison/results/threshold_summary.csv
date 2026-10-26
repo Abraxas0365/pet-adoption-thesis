@@ -1,0 +1,4 @@
+algorithm,profiles,pets,total_adopter_pet_pairs,pairs_at_or_above_80_percent,threshold_attainment_rate_pct,potential_false_positive_flags,potential_false_positive_rate_among_high_scores_pct
+weighted_cosine,11,2007,22077,66,0.30,0,0.00
+jaccard,11,2007,22077,1,0.00,0,0.00
+tversky,11,2007,22077,56,0.25,0,0.00
